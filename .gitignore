@@ -1,7 +1,7 @@
-*/*wallet.json
+*wallet.json
 node_modules
-*/target
+target
 .DS_Store
-*/package-lock.json
-*/yarn.lock
-*/.vscode
+package-lock.json
+yarn.lock
+.vscode
