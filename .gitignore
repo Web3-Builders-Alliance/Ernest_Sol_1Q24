@@ -1,5 +1,5 @@
 */*wallet.json
-*/node_modules
+node_modules
 */target
 .DS_Store
 */package-lock.json
