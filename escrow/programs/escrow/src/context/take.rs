@@ -55,7 +55,7 @@ pub struct Take<'info> {
     seeds = [b"vault", escrow.key().as_ref()],
     bump = escrow.vault_bump,
     token::mint = mint_maker,
-    token::authority = auth
+    token::authority = escrow
   )]
   pub vault: Account<'info, TokenAccount>,
 

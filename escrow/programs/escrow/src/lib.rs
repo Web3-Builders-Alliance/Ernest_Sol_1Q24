@@ -19,7 +19,7 @@ pub mod escrow {
 
     pub fn take(ctx: Context<Take>, amount: u64) -> Result<()> {
 
-      ctx.accounts.transfer_from_taker_to_maker(amount);
+      ctx.accounts.transfer_from_taker_to_maker(amount)?;
 
       ctx.accounts.transfer_from_vault_to_taker()
     }

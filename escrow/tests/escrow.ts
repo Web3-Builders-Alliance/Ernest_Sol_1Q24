@@ -86,6 +86,7 @@ describe("escrow", () => {
     );
 
     console.log(`mintTaker :: ${mintTaker} `)
+    console.log(`seed :: ${seed} `)
   });
 
   it("Make", async () => {
@@ -152,6 +153,9 @@ describe("escrow", () => {
     )).address;
 
     console.log(`takerSendAta :: ${takerSendAta} `)
+    console.log(`takerReceiveAta :: ${takerReceiveAta} `)
+    console.log(`makerReceiveAta :: ${makerReceiveAta} `)
+    console.log(`seed :: ${seed} `)
 
     await mintTo(
       connection,
@@ -163,6 +167,9 @@ describe("escrow", () => {
     ).then(confirm)
 
     const amountToSendFromTaker = new BN(10)
+    const zeroBalance = new BN(0)
+
+    const vaultAccountInitialBalance = await getAccountBalance(connection, vault)
 
     // Add your test here.
     const tx = await program.methods.take(amountToSendFromTaker).accounts({
@@ -183,18 +190,39 @@ describe("escrow", () => {
     .signers([taker])
     .rpc()
     .then(confirm)
-    .catch(e => console.error(e))
-    // .then(log);
+    // .catch(e => console.error(e))
+    .then(log);
 
-    const accountInfo = await connection.getAccountInfo(vault);
-    const data = Buffer.from(accountInfo.data);
-    const tokenAccountInfo = AccountLayout.decode(data);
+    const vaultAccountBalance = await getAccountBalance(connection, vault)
+    const makerReceiveAccountBalance = await getAccountBalance(connection, makerReceiveAta)
+    const takerReceiveAtaAccountBalance = await getAccountBalance(connection, takerReceiveAta)
 
     // Assert the escrow account has the correct deposit amount
-  //   assert.equal(
-  //     tokenAccountInfo.amount.toString(),
-  //     amountToDeposit.toString(),
-  //     "Escrow vault account should have the correct deposit amount"
-  // );
+    assert.equal(
+      vaultAccountBalance.toString(),
+      zeroBalance.toString(),
+      "Escrow vault account should be empty"
+    );
+
+    assert.equal(
+      makerReceiveAccountBalance.toString(),
+      amountToSendFromTaker.toString(),
+      "Maker receive account should have correct amount"
+    );
+
+    assert.equal(
+      takerReceiveAtaAccountBalance.toString(),
+      vaultAccountInitialBalance.toString(),
+      "Taker receive account should have correct amount"
+    );
   });
 });
+
+async function getAccountBalance(connection: anchor.web3.Connection, pk: anchor.web3.PublicKey): Promise<bigint> {
+
+  const accountInfo = await connection.getAccountInfo(pk);
+  const data = Buffer.from(accountInfo.data);
+  const tokenAccountInfo = AccountLayout.decode(data);
+
+  return tokenAccountInfo.amount;
+}
