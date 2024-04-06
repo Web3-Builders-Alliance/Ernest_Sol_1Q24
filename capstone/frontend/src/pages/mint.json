@@ -1,0 +1,14 @@
+{
+  "boat": {
+    "id": "08caefc30",
+    "mintAddress": "C6ZsE3bxXG2fxZdL1GkBovdMazGmBYuyd5M9JW7o3ExB",
+    "associatedTokenAddress": "8ro7yNvgLH9WFbKZeVWtm9kSWVperNQJY89V2Vd4B3L",
+    "price": 500000
+  },
+  "watch": {
+    "id": "a5da9abf4",
+    "mintAddress": "C7E5YvxK5iDuMXWbT757Qa5vKEMaNTuef7TFJL2LJqGN",
+    "associatedTokenAddress": "Dq35PH1HCgSBixS9MMn9YHL26JEqZLwtfzp3ztqdFxpC",
+    "price": 5000
+  }
+}
