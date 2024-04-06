@@ -1,8 +1,6 @@
 [workspace]
-resolver = "2"
 members = [
-    "programs/*",
-    # "macros"
+    "programs/*"
 ]
 
 [profile.release]

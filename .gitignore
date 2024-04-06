@@ -7,3 +7,4 @@ yarn.lock
 .vscode
 *.lock
 test-ledger
+/capstone/frontend

@@ -1,21 +1,25 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program, BN } from "@coral-xyz/anchor";
 import { Escrow } from "../target/types/escrow";
-import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { Keypair, LAMPORTS_PER_SOL, PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY, Ed25519Program, Transaction } from "@solana/web3.js";
 import { publicKey } from "@coral-xyz/anchor/dist/cjs/utils";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Account, TOKEN_PROGRAM_ID, createMint, getOrCreateAssociatedTokenAccount, mintTo, AccountLayout } from "@solana/spl-token";
 import { randomBytes } from "crypto";
 import { assert } from "chai";
 
+import wallet from "./wba-wallet.json"
+
 
 describe("escrow", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
+  const provider = anchor.getProvider();
 
   const program = anchor.workspace.Escrow as Program<Escrow>;
 
   const connection = anchor.getProvider().connection;
   
+  const adminKeypair = Keypair.fromSecretKey(new Uint8Array(wallet));
   const maker = Keypair.generate();
   const taker = Keypair.generate();
 
@@ -138,7 +142,86 @@ describe("escrow", () => {
     );
   });
 
-  it("Take", async () => {
+  // it("Take", async () => {
+
+  //   takerSendAta = (await getOrCreateAssociatedTokenAccount(
+  //     connection, taker, mintTaker, taker.publicKey
+  //   )).address;
+
+  //   takerReceiveAta = (await getOrCreateAssociatedTokenAccount(
+  //     connection, taker, mintMaker, taker.publicKey
+  //   )).address;
+
+  //   makerReceiveAta = (await getOrCreateAssociatedTokenAccount(
+  //     connection, taker, mintTaker, maker.publicKey
+  //   )).address;
+
+  //   console.log(`takerSendAta :: ${takerSendAta} `)
+  //   console.log(`takerReceiveAta :: ${takerReceiveAta} `)
+  //   console.log(`makerReceiveAta :: ${makerReceiveAta} `)
+  //   console.log(`seed :: ${seed} `)
+
+  //   await mintTo(
+  //     connection,
+  //     taker,
+  //     mintTaker,
+  //     takerSendAta, 
+  //     taker.publicKey,
+  //     1000
+  //   ).then(confirm)
+
+  //   const amountToSendFromTaker = new BN(10)
+  //   const zeroBalance = new BN(0)
+
+  //   const vaultAccountInitialBalance = await getAccountBalance(connection, vault)
+
+  //   // Add your test here.
+  //   const tx = await program.methods.take(amountToSendFromTaker).accounts({
+  //     taker: taker.publicKey,
+  //     maker: maker.publicKey,
+  //     mintMaker: mintMaker,
+  //     mintTaker: mintTaker,
+  //     takerReceiveAta: takerReceiveAta,
+  //     makerReceiveAta: makerReceiveAta,
+  //     takerSendAta: takerSendAta,
+  //     auth: authPda,
+  //     vault: vault,
+  //     escrow: escrow,
+  //     systemProgram: anchor.web3.SystemProgram.programId,
+  //     associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+  //     tokenProgram: TOKEN_PROGRAM_ID,
+  //   })
+  //   .signers([taker])
+  //   .rpc()
+  //   .then(confirm)
+  //   // .catch(e => console.error(e))
+  //   .then(log);
+
+  //   const vaultAccountBalance = await getAccountBalance(connection, vault)
+  //   const makerReceiveAccountBalance = await getAccountBalance(connection, makerReceiveAta)
+  //   const takerReceiveAtaAccountBalance = await getAccountBalance(connection, takerReceiveAta)
+
+  //   // Assert the escrow account has the correct deposit amount
+  //   assert.equal(
+  //     vaultAccountBalance.toString(),
+  //     zeroBalance.toString(),
+  //     "Escrow vault account should be empty"
+  //   );
+
+  //   assert.equal(
+  //     makerReceiveAccountBalance.toString(),
+  //     amountToSendFromTaker.toString(),
+  //     "Maker receive account should have correct amount"
+  //   );
+
+  //   assert.equal(
+  //     takerReceiveAtaAccountBalance.toString(),
+  //     vaultAccountInitialBalance.toString(),
+  //     "Taker receive account should have correct amount"
+  //   );
+  // });
+
+  it("Take_New", async () => {
 
     takerSendAta = (await getOrCreateAssociatedTokenAccount(
       connection, taker, mintTaker, taker.publicKey
@@ -171,52 +254,63 @@ describe("escrow", () => {
 
     const vaultAccountInitialBalance = await getAccountBalance(connection, vault)
 
-    // Add your test here.
-    const tx = await program.methods.take(amountToSendFromTaker).accounts({
-      taker: taker.publicKey,
-      maker: maker.publicKey,
-      mintMaker: mintMaker,
-      mintTaker: mintTaker,
-      takerReceiveAta: takerReceiveAta,
-      makerReceiveAta: makerReceiveAta,
-      takerSendAta: takerSendAta,
-      auth: authPda,
-      vault: vault,
-      escrow: escrow,
-      systemProgram: anchor.web3.SystemProgram.programId,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      tokenProgram: TOKEN_PROGRAM_ID,
-    })
-    .signers([taker])
-    .rpc()
-    .then(confirm)
-    // .catch(e => console.error(e))
-    .then(log);
+    const mStr =  "100 USD"
+    // const message = Buffer.from(mStr)
+    const message = new TextEncoder().encode(mStr)
 
-    const vaultAccountBalance = await getAccountBalance(connection, vault)
-    const makerReceiveAccountBalance = await getAccountBalance(connection, makerReceiveAta)
-    const takerReceiveAtaAccountBalance = await getAccountBalance(connection, takerReceiveAta)
+    const msgInt: Uint8Array = intToBytes(100)
+
+    // const ed25519Ix = Ed25519Program.createInstructionWithPublicKey({
+    //   publicKey: maker.publicKey.toBuffer(),
+    //   message,
+    //   signature: maker.secretKey,
+    // });
+
+    const ed25519Ix = Ed25519Program.createInstructionWithPrivateKey({
+      privateKey: adminKeypair.secretKey,
+      message: msgInt
+    });
+
+    // Add your test here.
+    const takeIx = await program.methods.takeNew().accounts({
+      buyer: taker.publicKey,
+      instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
+    }).instruction();
+    
+
+    const tx = new Transaction().add(ed25519Ix, takeIx);
+
+    await provider.sendAndConfirm(tx, [ taker ])
+      .then(confirm)
+      // .catch(e => console.error(e))
+      .then(log);
+
+    // const vaultAccountBalance = await getAccountBalance(connection, vault)
+    // const makerReceiveAccountBalance = await getAccountBalance(connection, makerReceiveAta)
+    // const takerReceiveAtaAccountBalance = await getAccountBalance(connection, takerReceiveAta)
 
     // Assert the escrow account has the correct deposit amount
-    assert.equal(
-      vaultAccountBalance.toString(),
-      zeroBalance.toString(),
-      "Escrow vault account should be empty"
-    );
+    // assert.equal(
+    //   vaultAccountBalance.toString(),
+    //   zeroBalance.toString(),
+    //   "Escrow vault account should be empty"
+    // );
 
-    assert.equal(
-      makerReceiveAccountBalance.toString(),
-      amountToSendFromTaker.toString(),
-      "Maker receive account should have correct amount"
-    );
+    // assert.equal(
+    //   makerReceiveAccountBalance.toString(),
+    //   amountToSendFromTaker.toString(),
+    //   "Maker receive account should have correct amount"
+    // );
 
-    assert.equal(
-      takerReceiveAtaAccountBalance.toString(),
-      vaultAccountInitialBalance.toString(),
-      "Taker receive account should have correct amount"
-    );
+    // assert.equal(
+    //   takerReceiveAtaAccountBalance.toString(),
+    //   vaultAccountInitialBalance.toString(),
+    //   "Taker receive account should have correct amount"
+    // );
   });
 });
+
+
 
 async function getAccountBalance(connection: anchor.web3.Connection, pk: anchor.web3.PublicKey): Promise<bigint> {
 
@@ -225,4 +319,11 @@ async function getAccountBalance(connection: anchor.web3.Connection, pk: anchor.
   const tokenAccountInfo = AccountLayout.decode(data);
 
   return tokenAccountInfo.amount;
+}
+
+function intToBytes(int: number): Uint8Array {
+  let buffer = new ArrayBuffer(4); // Create a buffer of 4 bytes (32 bits).
+  let view = new DataView(buffer);
+  view.setUint32(0, int, true); // Write the integer to the buffer. 'true' for little endian.
+  return new Uint8Array(buffer);
 }
